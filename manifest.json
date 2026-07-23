@@ -1,0 +1,35 @@
+{
+  "id": "/",
+  "name": "Pipeline Radar — Lead Scoring Demo",
+  "short_name": "Pipeline Radar",
+  "description": "Radar segnali commerciali: lead senza fornitore, rinnovi in scadenza, opportunità da contattare.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "lang": "it",
+  "dir": "ltr",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Da contattare",
+      "short_name": "Hot",
+      "description": "Lead ad alta priorità",
+      "url": "./?filter=hot",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Senza fornitore",
+      "short_name": "No vendor",
+      "description": "Lead senza soluzione attiva",
+      "url": "./?filter=no_vendor",
+      "icons": [{ "src": "icons/icon.svg", "sizes": "any" }]
+    }
+  ]
+}

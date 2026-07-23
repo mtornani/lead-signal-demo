@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#0a0a0a" />
+<meta name="description" content="Demo portfolio: radar segnali commerciali con scoring lead, PWA offline-first.">
+<meta name="application-name" content="Pipeline Radar">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pipeline Radar">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<title>Pipeline Radar — Lead Scoring (demo)</title>
+
+<style>
+:root{
+  --bg:          #0a0a0a;
+  --bg-1:        #0f0f0f;
+  --bg-2:        #151515;
+  --line:        #222;
+  --line-2:      #2a2a2a;
+  --ink:         #e8e8e8;
+  --ink-dim:     #9a9a9a;
+  --ink-mute:    #5c5c5c;
+  --ink-ghost:   #3a3a3a;
+
+  --acc:         #2fbf71;
+  --acc-dim:     #26a35f;
+  --acc-bg:      rgba(47,191,113,.10);
+
+  --red:         #ff3b4d;
+  --red-bg:      rgba(255,59,77,.12);
+  --amber:       #ffb020;
+  --amber-bg:    rgba(255,176,32,.12);
+  --blue:        #4d9bff;
+  --blue-bg:     rgba(77,155,255,.12);
+
+  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+*,*::before,*::after{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ background:var(--bg); color:var(--ink); }
+body{
+  font-family:var(--sans);
+  font-size:13.5px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+  overflow-x:hidden;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+button, input, select{ font:inherit; color:inherit; background:none; border:0; }
+button{ cursor:pointer; }
+a{ color:inherit; text-decoration:none; }
+
+.shell{ max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+
+/* ============ TOP BAR ============ */
+.topbar{
+  position: sticky; top:0; z-index: 20;
+  background: color-mix(in oklab, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner{
+  max-width:1200px; margin:0 auto; padding: 12px 16px;
+  display:grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items:center;
+}
+.brand{ display:flex; align-items:center; gap:8px; font-weight:700; font-size:12px; letter-spacing: .04em; }
+.brand .sub{ color: var(--ink-dim); font-weight:500; }
+.topbar .status{
+  font-size: 10.5px; color: var(--ink-dim);
+  display:flex; gap:8px; align-items:center; justify-content:flex-end; white-space:nowrap;
+}
+.status .dot{ width:6px; height:6px; border-radius:999px; background: var(--acc); }
+@media (max-width: 720px){
+  .topbar-inner{ grid-template-columns: auto 1fr; }
+  .topbar .status{ display:none; }
+}
+
+/* ============ HERO ============ */
+.cmd{ padding: 20px 0 14px; border-bottom: 1px solid var(--line); }
+.cmd-row{ display:grid; grid-template-columns: 1fr auto; gap: 14px; align-items: end; }
+.cmd h1{ font-weight: 700; font-size: clamp(22px, 4.8vw, 34px); letter-spacing: -.02em; line-height: 1; }
+.cmd h1 .green{ color: var(--acc); }
+.cmd .blurb{ margin-top: 6px; font-size: 12px; color: var(--ink-dim); max-width: 46ch; line-height: 1.5; }
+
+.counters{ display:flex; gap: 22px; align-items: baseline; }
+.counter{ display:flex; flex-direction:column; gap:2px; align-items:flex-end; min-width: 52px; }
+.counter .n{ font-family: var(--mono); font-size: 22px; font-weight:700; line-height:1; font-variant-numeric: tabular-nums; }
+.counter .l{ font-size: 9.5px; letter-spacing:.07em; color: var(--ink-mute); }
+.counter.hot .n{ color: var(--acc); }
+
+@media (max-width: 720px){
+  .cmd-row{ grid-template-columns: 1fr; }
+  .counters{ gap: 14px; justify-content: space-between; }
+  .counter{ align-items:flex-start; min-width: 0; }
+}
+
+/* ============ CONTROLS ============ */
+.controls{
+  position: sticky; top: 48px; z-index: 15;
+  background: color-mix(in oklab, var(--bg) 92%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+.search{ display:flex; align-items:center; gap:8px; border: 1px solid var(--line-2); padding: 10px 12px; background: var(--bg-1); transition: border-color .15s; }
+.search:focus-within{ border-color: var(--acc); }
+.search .prompt{ color: var(--acc); font-weight:700; }
+.search input{ flex:1; min-width:0; font-size: 14px; outline:0; }
+.search input::placeholder{ color: var(--ink-dim); }
+.search .kbd{ font-size:10px; color: var(--ink-mute); border:1px solid var(--line-2); padding:2px 6px; }
+@media (max-width: 720px){ .search .kbd{ display:none; } }
+
+.filterbar{ display:flex; margin-top: 10px; overflow-x:auto; border: 1px solid var(--line-2); scrollbar-width: none; }
+.filterbar::-webkit-scrollbar{ display:none; }
+.chip{
+  flex: 1 0 auto; min-height: 44px; padding: 12px 14px; font-size: 12px; font-weight: 500; letter-spacing: .02em;
+  color: var(--ink-dim); border-right: 1px solid var(--line-2); white-space: nowrap; transition: color .12s, background .12s;
+}
+.chip:last-child{ border-right: 0; }
+.chip .num{ margin-left:6px; color: var(--ink-mute); font-size:10px; }
+.chip:hover{ color: var(--ink); background: var(--bg-1); }
+.chip.on{ color: var(--bg); background: var(--acc); }
+.chip.on .num{ color: color-mix(in oklab, var(--bg) 80%, transparent); }
+
+.sub-row{ display:flex; justify-content:space-between; align-items:center; margin-top: 10px; font-size: 11px; color: var(--ink-mute); }
+.sub-row select{ background: var(--bg-1); border:1px solid var(--line-2); padding:5px 8px; font-size: 12px; color: var(--ink); }
+.sub-row .sort-group{ display:flex; gap:6px; }
+.results{ color: var(--ink-dim); }
+.results .n{ color: var(--acc); font-weight:700; }
+
+@media (max-width: 520px){
+  .sub-row{ flex-direction: column; align-items: stretch; gap: 8px; }
+  .sub-row .sort-group{ flex-direction: column; gap: 8px; }
+  .sub-row select{ width: 100%; min-height: 44px; padding: 8px 10px; }
+}
+
+/* ============ CARD GRID ============ */
+.grid{ display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; padding: 14px 0 80px; }
+@media (max-width: 640px){ .grid{ grid-template-columns: 1fr; gap: 8px; } }
+
+.card{
+  position: relative; background: var(--bg-1); border: 1px solid var(--line);
+  padding: 14px 14px 12px; cursor: pointer; transition: border-color .12s, background .12s;
+  overflow: hidden;
+}
+.card:hover{ border-color: var(--acc); background: var(--bg-2); }
+.card:hover .name{ color: var(--acc); }
+.card:active{ transform: translateY(1px); }
+.card:focus-visible{ outline: 2px solid var(--acc); outline-offset: -2px; }
+
+.card .urgency{ position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--ink-ghost); }
+.card[data-tier="hot"] .urgency{ width: 4px; }
+.card[data-urgency="critical"] .urgency{ background: var(--red); }
+.card[data-urgency="high"]     .urgency{ background: var(--amber); }
+.card[data-urgency="warm"]     .urgency{ background: var(--acc); }
+.card[data-urgency="cold"]     .urgency{ background: var(--ink-ghost); }
+
+.card[data-tier="hot"]{
+  background: linear-gradient(180deg, rgba(47,191,113,.05) 0%, transparent 55%), var(--bg-1);
+  border-color: color-mix(in oklab, var(--acc) 55%, var(--line));
+}
+.card[data-tier="hot"]  .dlabel{ color: var(--acc); }
+.card[data-tier="warm"] .dlabel{ color: var(--ink-dim); }
+.card[data-tier="cold"] .dlabel{ color: var(--ink-mute); }
+
+.card-head{ display:grid; grid-template-columns: 1fr auto; gap: 10px; align-items: flex-start; }
+.name-block .name{ font-size: 21px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; transition: color .12s; }
+.name-block .meta{ margin-top: 4px; font-size: 11.5px; color: var(--ink-dim); display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+.name-block .meta .sep{ color: var(--ink-ghost); }
+.name-block .meta .role{ color: var(--ink); font-weight: 500; }
+.card-line{ margin-top: 6px; color: var(--ink-mute); font-size: 11.5px; }
+
+.score{
+  font-family: var(--mono); font-weight: 800; font-size: 42px; line-height: .85; letter-spacing: -.02em;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.card[data-tier="hot"]  .score{ color: var(--acc); }
+.card[data-tier="warm"] .score{ color: var(--ink); }
+.card[data-tier="cold"] .score{ color: var(--ink-mute); }
+.score .dlabel{ display:block; font-size: 10px; font-weight: 700; letter-spacing: .05em; color: var(--ink-mute); margin-top: 4px; text-align: right; }
+
+.tag{ font-family: var(--mono); font-size: 9px; letter-spacing: .06em; padding: 2px 5px; border: 1px solid color-mix(in oklab, var(--acc) 45%, transparent); color: var(--acc); background: var(--acc-bg); white-space: nowrap; vertical-align: middle; margin-left: 6px; }
+
+.empty{ padding: 60px 16px; text-align:center; color: var(--ink-mute); font-family: var(--mono); }
+.empty .big{ font-family: var(--mono); color: var(--acc); font-size: 28px; margin-bottom: 10px; }
+
+/* ============ DETAIL DRAWER ============ */
+.overlay{ position: fixed; inset: 0; background: rgba(0,0,0,.75); backdrop-filter: blur(4px); display: none; z-index: 50; }
+.overlay.open{ display: block; }
+.drawer{
+  position: fixed; right: 0; top: 0; bottom: 0; width: min(560px, 100%); background: var(--bg);
+  border-left: 1px solid var(--acc); box-shadow: -24px 0 60px rgba(0,0,0,.6);
+  transform: translateX(100%); transition: transform .22s cubic-bezier(.2,.7,.2,1);
+  overflow-y: auto; z-index: 60; display:flex; flex-direction: column;
+}
+.overlay.open .drawer{ transform: translateX(0); }
+@media (max-width: 560px){
+  .drawer{ top: auto; right: 0; left: 0; bottom: 0; width: 100%; height: 92vh; border-left: 0; border-top: 1px solid var(--acc); transform: translateY(100%); }
+  .overlay.open .drawer{ transform: translateY(0); }
+}
+.drawer-top{
+  position: sticky; top:0; background: var(--bg); border-bottom: 1px solid var(--line);
+  padding: 14px 18px; display:flex; justify-content:space-between; align-items:center; gap: 14px;
+}
+.drawer-top .bread{ font-size: 10.5px; color: var(--ink-mute); letter-spacing: .1em; }
+.drawer-top .close{ width: 34px; height: 34px; border: 1px solid var(--line-2); color: var(--ink-dim); font-size: 18px; display:grid; place-items:center; transition: border-color .12s, color .12s; }
+.drawer-top .close:hover{ border-color: var(--red); color: var(--red); }
+
+.brief{ padding: 18px; display:flex; flex-direction: column; gap: 18px; }
+.brief-head{ display:grid; grid-template-columns: 1fr auto; gap: 14px; align-items: flex-start; }
+.brief-head .name{ font-weight: 700; font-size: clamp(26px, 6vw, 36px); line-height: 1; letter-spacing: -.02em; }
+.brief-head .sub{ margin-top: 6px; font-size: 12px; color: var(--ink-dim); display:flex; gap:8px; flex-wrap:wrap; }
+.brief-head .big-score{ font-family: var(--mono); font-size: 60px; font-weight: 800; line-height: .8; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.brief-head .big-score.hot{ color: var(--acc); }
+.brief-head .big-score.warm{ color: var(--ink); }
+.brief-head .big-score.cold{ color: var(--ink-mute); }
+.brief-head .big-score .pct{ font-size: 14px; color: var(--ink-mute); }
+
+.strip{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.strip .cell{ background: var(--bg); padding: 12px 10px; display:flex; flex-direction:column; gap:4px; }
+.strip .cell .v{ font-family: var(--mono); font-size: 20px; font-weight:700; line-height:1; font-variant-numeric: tabular-nums; }
+.strip .cell .l{ font-size: 9.5px; letter-spacing:.07em; color: var(--ink-mute); }
+@media (max-width: 480px){ .strip{ grid-template-columns: repeat(2, 1fr); } }
+
+.sect{ display:flex; flex-direction:column; gap:10px; }
+.sect-title{ font-family: var(--mono); font-size: 10.5px; letter-spacing:.06em; color: var(--ink-dim); border-bottom: 1px solid var(--line-2); padding-bottom: 6px; }
+
+.meta-grid{ display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line-2); }
+.meta-grid .cell{ padding: 9px 12px; border-right: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); display:flex; flex-direction:column; gap:2px; font-size: 12px; }
+.meta-grid .cell:nth-child(2n){ border-right: 0; }
+.meta-grid .cell:nth-last-child(-n+2){ border-bottom: 0; }
+.meta-grid .cell .k{ font-size: 9.5px; letter-spacing:.07em; color: var(--ink-mute); }
+.meta-grid .cell .v{ color: var(--ink); font-weight:500; }
+
+.verdict-note{ font-size: 12px; color: var(--ink-dim); line-height: 1.5; padding: 10px 12px; margin-bottom: 10px; background: var(--bg-1); border-left: 3px solid var(--acc); }
+
+.assess{ margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: 8px; }
+.assess.yes{ border-left: 3px solid var(--acc); background: var(--acc-bg); }
+.assess.no{ border-left: 3px solid var(--amber); background: var(--amber-bg); }
+.assess-h{ font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; color: var(--ink-mute); margin-bottom: 6px; }
+.assess.yes .assess-h{ color: var(--acc); }
+.assess.no .assess-h{ color: var(--amber); }
+.why-list{ margin: 0 0 0 1.1em; font-size: 13px; color: var(--ink-dim); line-height: 1.5; }
+.why-list li{ margin: 2px 0; }
+
+.actions{ padding: 14px 18px; border-top: 1px solid var(--line); position: sticky; bottom: 0; background: var(--bg); font-size: 11.5px; color: var(--ink-dim); }
+.actions .src{ margin-bottom: 4px; }
+.actions .crm-btn{
+  display:inline-block; margin-top: 6px; padding: 10px 14px; font-family: var(--mono); font-size: 11.5px;
+  letter-spacing: .08em; border: 1px solid var(--line-2); color: var(--ink-mute); cursor: default; opacity: .7;
+}
+
+.foot{ padding: 30px 0 20px; font-size: 10.5px; color: var(--ink-mute); border-top: 1px solid var(--line); margin-top: 40px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <span>PIPELINE</span>
+      <span class="sub">Radar</span>
+    </div>
+    <div></div>
+    <div class="status">
+      <span class="dot"></span>
+      <span>Dataset demo</span>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <section class="cmd">
+    <div class="cmd-row">
+      <div>
+        <h1>Pipeline <span class="green">Radar</span></h1>
+        <p class="blurb">Segnali commerciali da priorizzare: lead senza fornitore, rinnovi in scadenza, contratti appena rescissi. Dati fittizi a scopo dimostrativo.</p>
+      </div>
+      <div class="counters">
+        <div class="counter hot">
+          <div class="n" id="ctHot">—</div><div class="l">Da contattare</div>
+        </div>
+        <div class="counter">
+          <div class="n" id="ctNoVendor">—</div><div class="l">Senza fornitore</div>
+        </div>
+        <div class="counter">
+          <div class="n" id="ctSmb">—</div><div class="l">PMI</div>
+        </div>
+        <div class="counter">
+          <div class="n" id="ctAll">—</div><div class="l">In lista</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="controls">
+    <div class="search">
+      <span class="prompt">›</span>
+      <input id="q" type="search" placeholder="Cerca nome, fornitore o segmento…" autocomplete="off" />
+    </div>
+    <div class="filterbar" id="filters">
+      <button class="chip on" data-f="all">Tutti<span class="num" data-ct="all">0</span></button>
+      <button class="chip" data-f="hot">Da contattare<span class="num" data-ct="hot">0</span></button>
+      <button class="chip" data-f="no_vendor">Senza fornitore<span class="num" data-ct="no_vendor">0</span></button>
+      <button class="chip" data-f="smb">PMI<span class="num" data-ct="smb">0</span></button>
+      <button class="chip" data-f="new">Nuovi<span class="num" data-ct="new">0</span></button>
+    </div>
+    <div class="sub-row">
+      <div class="results"><span class="n" id="rcount">0</span> / <span id="rtotal">0</span></div>
+      <div class="sort-group">
+        <select id="typeF">
+          <option value="">Tutte le situazioni</option>
+          <option value="no_vendor">Senza fornitore</option>
+          <option value="terminated">Ha rescisso contratto</option>
+          <option value="trial">In prova</option>
+          <option value="evaluating">In valutazione</option>
+          <option value="renewal_soon">Rinnovo in scadenza</option>
+          <option value="emerging">Prospect emergente</option>
+        </select>
+        <select id="sortBy">
+          <option value="score">Priorità</option>
+          <option value="urgency">Più urgenti</option>
+          <option value="date">Più recenti</option>
+          <option value="name">A–Z</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid" id="grid"></section>
+  <div class="empty" id="empty" style="display:none">
+    <div class="big">Nessun risultato</div>
+    <div>Prova a cambiare filtro o cerca un altro nome.</div>
+  </div>
+
+  <footer class="foot">Pipeline Radar — demo portfolio, dataset interamente fittizio</footer>
+</div>
+
+<div class="overlay" id="ov">
+  <aside class="drawer" id="drawer">
+    <div class="drawer-top">
+      <div class="bread"><span id="breadName">—</span></div>
+      <button class="close" id="closeBtn" aria-label="close">×</button>
+    </div>
+    <div class="brief" id="brief"></div>
+    <div class="actions">
+      <div class="src" id="sourceLabel">Fonte: n/d</div>
+      <span class="crm-btn" title="Demo — non collegato a un CRM reale">Apri in CRM ↗</span>
+    </div>
+  </aside>
+</div>
+
+<script>
+window.LEADS = [
+  { id:'l01', lead_name:'Nordacciai Srl', segment:'Mid-market', team_size:120, region:'Nord-Ovest',
+    current_vendor:'Nessun fornitore', channel:'Referral', owner:'M. Bianchi',
+    lead_type:'no_vendor', days_without_vendor:0, priority_score:82,
+    interactions:5, conversions:2, referrals:1, deal_value_formatted:'€38K',
+    detected_at:'2026-07-21', source_label:'LinkedIn — post reparto acquisti',
+    assessment:{ yes:['Nessun fornitore attivo, decisione rapida possibile','Referral da cliente esistente nello stesso settore'], no:['Team acquisti piccolo, ciclo può comunque allungarsi'], action:'Contattare entro 48h' } },
+
+  { id:'l02', lead_name:'GreenPack Imballaggi', segment:'Enterprise', team_size:340, region:'Nord-Est',
+    current_vendor:'Concorrente Alpha', channel:'Outbound', owner:'L. Conti',
+    lead_type:'renewal_soon', renewal_date:'2026-08-18', priority_score:76,
+    interactions:9, conversions:4, referrals:0, deal_value_formatted:'€120K',
+    detected_at:'2026-06-30', source_label:'Comunicato stampa — rinnovo contratti fornitori',
+    assessment:{ yes:['Rinnovo con concorrente tra meno di 30 giorni','Storico di insoddisfazione su tempi di supporto'], no:['Enterprise, processo di approvazione lungo'], action:'Contattare ora' } },
+
+  { id:'l03', lead_name:'Officina Meccanica Bruni', segment:'PMI', team_size:24, region:'Centro',
+    current_vendor:'Nessun fornitore', channel:'Evento', owner:'S. Verdi',
+    lead_type:'no_vendor', days_without_vendor:38, priority_score:64,
+    interactions:3, conversions:1, referrals:0, deal_value_formatted:'€9K',
+    detected_at:'2026-06-12', source_label:'Fiera di settore — scheda contatto',
+    assessment:{ yes:['PMI, ciclo di vendita corto'], no:['Da 38 giorni senza follow-up, interesse da riverificare'], action:"Da tenere d'occhio" } },
+
+  { id:'l04', lead_name:'Adriatica Trasporti', segment:'Mid-market', team_size:95, region:'Centro',
+    current_vendor:'Concorrente Beta', channel:'Inbound', owner:'A. Russo',
+    lead_type:'terminated', priority_score:71,
+    interactions:6, conversions:2, referrals:2, deal_value_formatted:'€52K',
+    detected_at:'2026-07-15', source_label:'Richiesta demo dal sito',
+    assessment:{ yes:['Ha appena rescisso con il fornitore precedente','Ha già richiesto una demo in autonomia'], no:[], action:'Contattare ora' } },
+
+  { id:'l05', lead_name:'Solaris Energy Solutions', segment:'Enterprise', team_size:210, region:'Sud',
+    current_vendor:'Concorrente Gamma', channel:'Outbound', owner:'M. Bianchi',
+    lead_type:'evaluating', priority_score:58,
+    interactions:4, conversions:1, referrals:0, deal_value_formatted:'€85K',
+    detected_at:'2026-06-20', source_label:'Segnalazione partner tecnologico',
+    assessment:{ yes:['In fase di valutazione alternative, finestra aperta'], no:['Nessun contatto diretto ancora stabilito'], action:"Da tenere d'occhio" } },
+
+  { id:'l06', lead_name:'Vela Consulting Group', segment:'PMI', team_size:18, region:'Nord-Ovest',
+    current_vendor:'Soluzione interna', channel:'Referral', owner:'L. Conti',
+    lead_type:'evaluating', priority_score:45,
+    interactions:2, conversions:0, referrals:1, deal_value_formatted:'€7K',
+    detected_at:'2026-05-28', source_label:'Referral da partner commerciale',
+    assessment:{ yes:['Referral qualificato'], no:['Soluzione interna consolidata, difficile da spostare'], action:'Bassa priorità' } },
+
+  { id:'l07', lead_name:'Ferramenta Colombo', segment:'PMI', team_size:12, region:'Nord-Est',
+    current_vendor:'Nessun fornitore', channel:'Inbound', owner:'S. Verdi',
+    lead_type:'no_vendor', days_without_vendor:6, priority_score:73,
+    interactions:4, conversions:2, referrals:0, deal_value_formatted:'€11K',
+    detected_at:'2026-07-19', source_label:'Form contatto sito',
+    assessment:{ yes:['Ha compilato il form da solo, interesse attivo','PMI, decisione rapida'], no:[], action:'Contattare entro 48h' } },
+
+  { id:'l08', lead_name:'Manifatture Rossi 1962', segment:'Mid-market', team_size:150, region:'Nord-Ovest',
+    current_vendor:'Concorrente Alpha', channel:'Evento', owner:'A. Russo',
+    lead_type:'renewal_soon', renewal_date:'2026-09-05', priority_score:68,
+    interactions:7, conversions:2, referrals:1, deal_value_formatted:'€64K',
+    detected_at:'2026-07-02', source_label:'Fiera di settore — scheda contatto',
+    assessment:{ yes:['Rinnovo tra ~6 settimane, finestra di conversione aperta'], no:['Relazione storica solida col fornitore attuale'], action:"Da tenere d'occhio" } },
+
+  { id:'l09', lead_name:'Quercia Consulenza HR', segment:'PMI', team_size:9, region:'Centro',
+    current_vendor:'Nessun fornitore', channel:'LinkedIn', owner:'M. Bianchi',
+    lead_type:'no_vendor', days_without_vendor:52, priority_score:41,
+    interactions:1, conversions:0, referrals:0, deal_value_formatted:'€5K',
+    detected_at:'2026-05-10', source_label:'Post LinkedIn — ricerca soluzione',
+    assessment:{ yes:['PMI, potenziale ticket basso ma rapido'], no:['Segnale vecchio, nessun follow-up avviato'], action:'Bassa priorità' } },
+
+  { id:'l10', lead_name:'Delta Ottica', segment:'PMI', team_size:31, region:'Sud',
+    current_vendor:'Concorrente Beta', channel:'Outbound', owner:'L. Conti',
+    lead_type:'trial', priority_score:55,
+    interactions:3, conversions:1, referrals:0, deal_value_formatted:'€14K',
+    detected_at:'2026-06-25', source_label:'Follow-up outbound',
+    assessment:{ yes:['In prova con concorrente, finestra di scontento tipica a metà trial'], no:[], action:"Da tenere d'occhio" } },
+
+  { id:'l11', lead_name:'Pianura Agrifood', segment:'Enterprise', team_size:280, region:'Nord-Est',
+    current_vendor:'Concorrente Gamma', channel:'Referral', owner:'S. Verdi',
+    lead_type:'renewal_soon', renewal_date:'2026-07-30', priority_score:88,
+    interactions:11, conversions:5, referrals:2, deal_value_formatted:'€145K',
+    detected_at:'2026-07-20', source_label:'Referral da cliente Enterprise esistente',
+    assessment:{ yes:['Rinnovo imminente (< 10 giorni)','Referral diretto da cliente comparabile','Deal value alto'], no:['Enterprise, servono più stakeholder in call'], action:'Contattare ora — priorità massima' } },
+
+  { id:'l12', lead_name:'Vertice Formazione', segment:'PMI', team_size:22, region:'Centro',
+    current_vendor:'Soluzione interna', channel:'Inbound', owner:'A. Russo',
+    lead_type:'evaluating', priority_score:39,
+    interactions:2, conversions:0, referrals:0, deal_value_formatted:'€6K',
+    detected_at:'2026-05-15', source_label:'Richiesta info dal sito',
+    assessment:{ yes:[], no:['Soluzione interna consolidata','Nessuna urgenza dichiarata'], action:'Bassa priorità' } },
+
+  { id:'l13', lead_name:'Silvestri Costruzioni', segment:'Mid-market', team_size:88, region:'Sud',
+    current_vendor:'Nessun fornitore', channel:'Evento', owner:'M. Bianchi',
+    lead_type:'no_vendor', days_without_vendor:2, priority_score:79,
+    interactions:5, conversions:3, referrals:0, deal_value_formatted:'€41K',
+    detected_at:'2026-07-22', source_label:'Fiera di settore — scheda contatto',
+    assessment:{ yes:['Segnale freschissimo, nessun fornitore attivo','Mid-market, budget probabile'], no:[], action:'Contattare entro 48h' } },
+
+  { id:'l14', lead_name:'NovaWeb Agency', segment:'Startup', team_size:14, region:'Nord-Ovest',
+    current_vendor:'Nessun fornitore', channel:'LinkedIn', owner:'L. Conti',
+    lead_type:'emerging', priority_score:60,
+    interactions:2, conversions:1, referrals:0, deal_value_formatted:'€8K',
+    detected_at:'2026-07-11', source_label:'LinkedIn — annuncio round di crescita',
+    assessment:{ yes:['Startup in crescita, nuovo budget disponibile'], no:['Nessuna storia di acquisto pregressa'], action:"Da tenere d'occhio" } },
+
+  { id:'l15', lead_name:'Meridiana Assicurazioni Broker', segment:'Mid-market', team_size:132, region:'Isole',
+    current_vendor:'Concorrente Alpha', channel:'Outbound', owner:'S. Verdi',
+    lead_type:'evaluating', priority_score:52,
+    interactions:4, conversions:1, referrals:0, deal_value_formatted:'€47K',
+    detected_at:'2026-06-05', source_label:'Follow-up outbound',
+    assessment:{ yes:['In valutazione attiva di alternative'], no:['Ciclo di vendita assicurativo tipicamente lungo'], action:"Da tenere d'occhio" } },
+
+  { id:'l16', lead_name:'Cantina Sette Colli', segment:'PMI', team_size:27, region:'Centro',
+    current_vendor:'Concorrente Beta', channel:'Referral', owner:'A. Russo',
+    lead_type:'terminated', priority_score:70,
+    interactions:5, conversions:2, referrals:1, deal_value_formatted:'€16K',
+    detected_at:'2026-07-08', source_label:'Referral da fornitore terzo',
+    assessment:{ yes:['Ha appena rescisso con il concorrente','Referral qualificato'], no:[], action:'Contattare ora' } },
+
+  { id:'l17', lead_name:'Borgo Digitale', segment:'Startup', team_size:6, region:'Nord-Est',
+    current_vendor:'Nessun fornitore', channel:'Inbound', owner:'M. Bianchi',
+    lead_type:'no_vendor', days_without_vendor:15, priority_score:57,
+    interactions:2, conversions:0, referrals:0, deal_value_formatted:'€4K',
+    detected_at:'2026-07-05', source_label:'Form contatto sito',
+    assessment:{ yes:['Nessun fornitore attivo'], no:['Team molto piccolo, budget limitato'], action:"Da tenere d'occhio" } },
+
+  { id:'l18', lead_name:'Ecoline Servizi Ambientali', segment:'Mid-market', team_size:104, region:'Sud',
+    current_vendor:'Concorrente Gamma', channel:'Evento', owner:'L. Conti',
+    lead_type:'renewal_soon', renewal_date:'2026-11-20', priority_score:49,
+    interactions:3, conversions:1, referrals:0, deal_value_formatted:'€33K',
+    detected_at:'2026-06-14', source_label:'Fiera di settore — scheda contatto',
+    assessment:{ yes:[], no:['Rinnovo ancora lontano (~4 mesi)'], action:'Bassa priorità' } },
+];
+</script>
+<script src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('[Pipeline Radar] SW register failed', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
