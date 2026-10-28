@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Pipeline Radar — Lead Scoring Demo",
+  "name": "Pipeline Radar \u2014 Lead Scoring Demo",
   "short_name": "Pipeline Radar",
-  "description": "Radar segnali commerciali: lead senza fornitore, rinnovi in scadenza, opportunità da contattare.",
+  "description": "Radar segnali commerciali: lead senza fornitore, rinnovi in scadenza, opportunit\u00e0 da contattare.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -11,25 +11,49 @@
   "theme_color": "#0a0a0a",
   "lang": "it",
   "dir": "ltr",
-  "categories": ["business", "productivity"],
+  "categories": [
+    "business",
+    "productivity"
+  ],
   "icons": [
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
     {
       "name": "Da contattare",
       "short_name": "Hot",
-      "description": "Lead ad alta priorità",
+      "description": "Lead ad alta priorit\u00e0",
       "url": "./?filter=hot",
-      "icons": [{ "src": "icons/icon.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "icons/icon.svg",
+          "sizes": "any"
+        }
+      ]
     },
     {
       "name": "Senza fornitore",
       "short_name": "No vendor",
       "description": "Lead senza soluzione attiva",
       "url": "./?filter=no_vendor",
-      "icons": [{ "src": "icons/icon.svg", "sizes": "any" }]
+      "icons": [
+        {
+          "src": "icons/icon.svg",
+          "sizes": "any"
+        }
+      ]
     }
-  ]
+  ],
+  "buildHash": "b1884a43"
 }
